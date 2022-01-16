@@ -1,0 +1,146 @@
+diff --git a/include/House.h b/include/House.h
+index 02cec43..9d5783f 100644
+--- a/include/House.h
++++ b/include/House.h
+@@ -2,9 +2,13 @@
+ 
+ #include "DestroyableGroundObject.h"
+ #include <cstdint>
++#include <iostream>
++#include <string>
+ 
+ class House : public DestroyableGroundObject {
+ public:
++  friend class HouseBuilderA;
++
+   bool isInside(double x1, double x2) const override;
+ 
+   inline uint16_t GetScore() const override {
+@@ -15,4 +19,70 @@ public:
+ 
+ private:
+   const uint16_t score = 40;
++  //char look[7][14];
++  std::string look[7];
++};
++
++class HouseBuilder
++{
++protected:
++    House* p;
++public:
++    HouseBuilder():p(0) {};
++    virtual ~HouseBuilder() {};
++    virtual void createHouse() {};
++    virtual void buildFloor() {};
++    virtual void buildWall() {};
++    virtual void buildRoof() {};
++    virtual void buildPipe() {};
++    virtual void buildWindow() {};
++    virtual House* getHouse() {return p;};
++};
++
++class HouseBuilderA: public HouseBuilder
++{
++public:
++    void createHouse() {p=new House;};
++    void buildFloor() {
++        p->look[6]="##############";
++    };
++    void buildWall() {
++        p->look[3]="##          ##";
++        p->look[4]="##          ##";
++        p->look[5]="##          ##";
++    };
++    void buildRoof() {
++        p->look[0]="      ##      ";
++        p->look[1]="    ######    ";
++        p->look[2]=" #####  ##### ";
++    };
++    void buildPipe() {
++        p->look[0][11]='#';
++        p->look[1][11]='#';
++    };
++    void buildWindow() {
++        p->look[3][6]='#';
++        p->look[3][7]='#';
++        p->look[4][6]='#';
++        p->look[4][7]='#';
++    };
++};
++
++class HouseDirector
++{
++public:
++    House* createHouse(HouseBuilder& house) {
++        house.createHouse();
++        house.buildFloor();
++        house.buildWall();
++        house.buildRoof();
++        char build='y';
++        std::cout << "Build house with pipe? ([y]/n) >";
++        std::cin>>build;
++        if (build=='y') house.buildPipe();
++        std::cout << "Build house with window? ([y]/n) >";
++        std::cin>>build;
++        if (build=='y') house.buildWindow();
++        return house.getHouse();
++    };
+ };
+diff --git a/src/House.cpp b/src/House.cpp
+index 3fb1e70..a96393d 100644
+--- a/src/House.cpp
++++ b/src/House.cpp
+@@ -29,16 +29,21 @@ bool House::isInside(double x1, double x2) const
+ void House::Draw() const
+ {
+ 	ScreenSingleton::getInstance().SetColor(CC_Yellow);
+-	ScreenSingleton::getInstance().GotoXY(x, y - 5);
+-	std::cout << "  ########  ";
+-	ScreenSingleton::getInstance().GotoXY(x, y - 4);
+-	std::cout << "##        ##";
+-	ScreenSingleton::getInstance().GotoXY(x, y - 3);
+-	std::cout << "############";
+-	ScreenSingleton::getInstance().GotoXY(x, y - 2);
+-	std::cout << "#          #";
+-	ScreenSingleton::getInstance().GotoXY(x, y - 1);
+-	std::cout << "#          #";
+-	ScreenSingleton::getInstance().GotoXY(x, y);
+-	std::cout << "############";
++//	ScreenSingleton::getInstance().GotoXY(x, y - 5);
++//	std::cout << "  ########  ";
++//	ScreenSingleton::getInstance().GotoXY(x, y - 4);
++//	std::cout << "##        ##";
++//	ScreenSingleton::getInstance().GotoXY(x, y - 3);
++//	std::cout << "############";
++//	ScreenSingleton::getInstance().GotoXY(x, y - 2);
++//	std::cout << "#          #";
++//	ScreenSingleton::getInstance().GotoXY(x, y - 1);
++//	std::cout << "#          #";
++//	ScreenSingleton::getInstance().GotoXY(x, y);
++//	std::cout << "############";
++    for (int i=0; i<7;i++) {
++        ScreenSingleton::getInstance().GotoXY(x, y-i);
++        std::cout << look[6-i];
++    }
+ }
++
+diff --git a/src/SBomber.cpp b/src/SBomber.cpp
+index 2bd57d7..7035989 100644
+--- a/src/SBomber.cpp
++++ b/src/SBomber.cpp
+@@ -49,9 +49,12 @@ SBomber::SBomber()
+   pTank->SetPos(50, groundY - 1);
+   vecStaticObj.push_back(pTank);
+ 
+-  House* pHouse = new House;
++//  House* pHouse = new House;
++  HouseDirector h_dir;
++  HouseBuilderA h_build;
++  House* pHouse=h_dir.createHouse(h_build);
+   pHouse->SetWidth(13);
+-  pHouse->SetPos(80, groundY - 1);
++  pHouse->SetPos(10, groundY - 1);
+   vecStaticObj.push_back(pHouse);
+ 
+   /*
